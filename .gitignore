@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Local system files
+.DS_Store
+Thumbs.db
+
+# Kaggle credentials - never commit this
+kaggle.json
+
+# Raw/full downloaded data
+# The repo includes a small sample dataset only. Download the full dataset locally.
+data/raw/*
+!data/raw/.gitkeep
+
+# Generated model binaries
+models/
+*.joblib
+*.pkl
+
+# Local outputs that can be regenerated
+reports/predictions.csv
+reports/risk_scored_customers.csv
+reports/model_metrics_full.json
