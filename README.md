@@ -6,6 +6,16 @@ This project is designed for **Credit Card Risk Analyst**, **Credit Risk Analyst
 
 > Note: The repository includes a synthetic sample dataset so the project can run immediately. The full public UCI/Kaggle dataset can be downloaded using the provided downloader script.
 
+## Features
+
+- Predicts customer-level credit-card default risk using repayment history, bill/payment amounts, credit limit, and demographics
+- End-to-end pipeline: data cleaning, feature engineering, model training, evaluation, and risk segmentation
+- Compares Logistic Regression and Random Forest using ROC-AUC, PR-AUC, F1, Precision, and Recall
+- Segments customers into Low/Medium/High/Very High risk bands for business reporting
+- Ships with a synthetic sample dataset plus a UCI/Kaggle downloader for the full dataset
+- Generates report figures, CSV metrics, and risk-segment summaries
+- Includes smoke tests and a repository audit script
+
 ---
 
 ## Business Problem
@@ -145,7 +155,7 @@ credit-card-default-risk-analysis/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/credit-card-default-risk-analysis.git
+git clone https://github.com/nkpendyam/credit-card-default-risk-analysis.git
 cd credit-card-default-risk-analysis
 ```
 
@@ -276,3 +286,9 @@ python src/make_report_figures.py --data-path data/raw/UCI_Credit_Card.csv
 ## Disclaimer
 
 This project is for learning and portfolio demonstration only. It is not financial advice and should not be used for real credit decisions without proper validation, governance, compliance review, and fairness testing.
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
