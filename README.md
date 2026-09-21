@@ -1,294 +1,68 @@
-# Credit Card Default Risk Analysis
+# Credit card default risk analysis
 
-A professional credit-risk analytics project that predicts whether a credit-card customer is likely to default next month using repayment history, bill amounts, payment amounts, credit limit, and customer profile variables.
+This independent student project evaluates next-month default-risk ranking on the original UCI Default of Credit Card Clients dataset. It is a reproducible model-validation study, not a lending tool. The project asks how a portfolio team can describe observed risk, compare candidate models, and inspect score bands while keeping test evaluation and operational claims separate. The authoritative outputs are under `reports/uci/`; older files in the repository-level `reports/` directory are retained as a historical synthetic demonstration and are not evidence for this UCI study.
 
-This project is designed for **Credit Card Risk Analyst**, **Credit Risk Analyst**, **Risk Analytics**, and **Data Analyst** portfolio use.
+Repository: [nkpendyam/credit-card-default-risk-analysis](https://github.com/nkpendyam/credit-card-default-risk-analysis)
 
-> Note: The repository includes a synthetic sample dataset so the project can run immediately. The full public UCI/Kaggle dataset can be downloaded using the provided downloader script.
+## Dataset and scope
 
-## Features
+The source contains 30,000 Taiwan credit-card client records from 2005, including 6,636 positive default labels. Features cover credit limit, repayment status, bill amounts, payment amounts, and legacy profile fields. Sex, age, education, and marital status are retained as source fields; this project does not establish fairness, legal suitability, or permitted use.
 
-- Predicts customer-level credit-card default risk using repayment history, bill/payment amounts, credit limit, and demographics
-- End-to-end pipeline: data cleaning, feature engineering, model training, evaluation, and risk segmentation
-- Compares Logistic Regression and Random Forest using ROC-AUC, PR-AUC, F1, Precision, and Recall
-- Segments customers into Low/Medium/High/Very High risk bands for business reporting
-- Ships with a synthetic sample dataset plus a UCI/Kaggle downloader for the full dataset
-- Generates report figures, CSV metrics, and risk-segment summaries
-- Includes smoke tests and a repository audit script
+Source: [UCI Default of Credit Card Clients](https://archive.ics.uci.edu/dataset/350/default+of+credit+card+clients), DOI `10.24432/C55S3H`, CC BY 4.0. Cite Yeh and Lien (2009), “The comparisons of data mining techniques for the predictive accuracy of probability of default of credit card clients.”
 
----
+## Verified results
 
-## Business Problem
+The split is approximately 60% training, 20% validation, and 20% test. Feature-identical records are grouped before splitting: 17,999 training rows, 6,001 validation rows, and 6,000 test rows, with zero feature-group overlap. Preprocessing is fitted on training data. Candidate selection uses validation ROC AUC; the held-out test set is evaluated once for the selected model and a dummy prior baseline.
 
-Credit-card lenders need to identify customers who may default so they can manage portfolio risk, improve collections strategy, and support responsible credit decisioning.
+| Model | Split | Selected | ROC AUC | Average precision | F1 | Precision | Recall |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Logistic regression | Validation | No | 0.73213010 | 0.51377467 | 0.49621106 | 0.39552573 | 0.66566265 |
+| Random forest | Validation | Yes | 0.78342129 | 0.56910058 | 0.53980892 | 0.57263514 | 0.51054217 |
+| Random forest | Held-out test | Yes | 0.78317125 | 0.55722406 | 0.52806324 | 0.55527847 | 0.50339111 |
+| Prior baseline | Held-out test | No | 0.50000000 | 0.22116667 | 0.00000000 | 0.00000000 | 0.00000000 |
 
-This project answers:
+The complete manifest is `reports/uci/model_metrics_full.json`; the compact table is `reports/uci/model_metrics.csv`. The `pr_auc` field is the saved `average_precision_score` under a legacy column name. The score-band summary is descriptive: it reports customer counts, observed default rates, and average model scores. It does not claim calibrated probability.
 
-- Which customer attributes are related to default risk?
-- Can a machine-learning model predict high-risk customers?
-- Can customers be segmented into low, medium, high, and very-high risk bands?
-- Can the results be presented in a clear business-reporting format?
+![Validation candidates and held-out test ROC AUC](reports/uci/roc_auc_comparison.png)
 
----
+![Risk score band counts and observed default rates](reports/uci/risk_segment_summary.png)
 
-## Dataset
+## Implementation decisions
 
-The project supports the public **Default of Credit Card Clients** dataset from the UCI Machine Learning Repository and its Kaggle mirror.
+- Raw UCI/Kaggle column aliases are standardized into one model schema, and required fields are checked before training.
+- Numeric validation rejects missing or nonfinite required features, and target validation rejects missing, fractional, or nonbinary labels rather than silently converting them.
+- Feature-identical rows remain in one split to reduce leakage from repeated records.
+- Logistic regression provides a linear baseline; random forest provides the selected nonlinear candidate.
+- Model selection happens on validation data. The test partition is not used for refitting, threshold tuning, or candidate selection.
+- Predictions export model scores and score bands for retrospective inspection. They are not approvals, collections rules, or lending recommendations.
 
-| Item | Details |
-|---|---|
-| Full dataset source | UCI Machine Learning Repository |
-| Kaggle mirror | `uciml/default-of-credit-card-clients-dataset` |
-| Full dataset size | 30,000 customers |
-| Target variable | `default_next_month` |
-| Problem type | Binary classification |
-| Main features | Credit limit, repayment status, bill amount, payment amount, age, education, sex, marital status |
-
-The committed file `data/sample/credit_card_default_sample.csv` is a **synthetic UCI-compatible sample** for quick execution, testing, and README visuals. It should not be presented as real banking customer data.
-
----
-
-## Project Workflow
+## Reproduce locally
 
 ```text
-Raw Credit Card Data
-        ↓
-Data Cleaning and Column Standardization
-        ↓
-Feature Engineering and Preprocessing
-        ↓
-Model Training: Logistic Regression and Random Forest
-        ↓
-Model Evaluation: ROC-AUC, PR-AUC, F1, Precision, Recall
-        ↓
-Risk Segmentation: Low, Medium, High, Very High
-        ↓
-Business-Style Reports and Visualizations
-```
-
----
-
-## Key Results on Included Sample Data
-
-| Model | ROC-AUC | PR-AUC | F1 | Precision | Recall |
-|---|---:|---:|---:|---:|---:|
-| Logistic Regression | 0.683 | 0.547 | 0.510 | 0.544 | 0.480 |
-| Random Forest | 0.646 | 0.509 | 0.415 | 0.579 | 0.324 |
-
-Best model on the included sample data: **Logistic Regression**.
-
-> These numbers are from the included synthetic sample data and are mainly for demonstrating the workflow. Results will differ when training on the full public dataset.
-
----
-
-## Visual Analysis
-
-### 1. Target Distribution
-
-![Default Distribution](reports/figures/01_default_distribution.png)
-
-### 2. Default Rate by Latest Repayment Status
-
-![Default by Payment Status](reports/figures/02_default_by_payment_status.png)
-
-### 3. Model Performance Comparison
-
-![Model Metrics](reports/figures/03_model_metrics.png)
-
-### 4. Observed Default Rate by Risk Band
-
-![Risk Segments](reports/figures/04_risk_segments.png)
-
-### 5. Confusion Matrix
-
-![Confusion Matrix](reports/figures/05_confusion_matrix.png)
-
----
-
-## Risk Segment Summary
-
-| Risk Band | Customers | Observed Default Rate | Average Predicted Default Probability |
-|---|---:|---:|---:|
-| Low | 18 | 16.7% | 21.8% |
-| Medium | 192 | 26.0% | 37.9% |
-| High | 69 | 47.8% | 60.0% |
-| Very High | 21 | 76.2% | 82.3% |
-
-This segmentation converts model probabilities into business-friendly groups that can support credit policy review, portfolio monitoring, and collections prioritization.
-
----
-
-## Repository Structure
-
-```text
-credit-card-default-risk-analysis/
-├── data/
-│   ├── raw/                         # Full downloaded dataset goes here; not committed
-│   ├── sample/                      # Synthetic sample dataset committed for quick run
-│   └── README.md                    # Dataset notes and source details
-├── reports/
-│   ├── figures/                     # README charts
-│   ├── model_metrics.csv            # Model comparison metrics
-│   └── risk_segment_summary.csv     # Risk-band summary report
-├── src/
-│   ├── config.py                    # Project paths and column definitions
-│   ├── download_data.py             # UCI/Kaggle dataset downloader
-│   ├── load_data.py                 # Data loading, cleaning, validation
-│   ├── make_report_figures.py       # Creates README/report charts
-│   ├── make_sample_data.py          # Regenerates synthetic sample data
-│   ├── predict.py                   # Scores customers using trained model
-│   ├── preprocess.py                # Encoding and scaling pipeline
-│   └── train_model.py               # Model training and evaluation
-├── tests/
-│   └── test_pipeline.py             # Smoke tests
-├── audit_repo.py                    # Local repo audit script
-├── requirements.txt
-├── LICENSE
-├── .gitignore
-└── README.md
-```
-
----
-
-## How to Run Locally
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/nkpendyam/credit-card-default-risk-analysis.git
-cd credit-card-default-risk-analysis
-```
-
-### 2. Create a virtual environment
-
-Windows PowerShell:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-macOS/Linux:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
 pip install -r requirements.txt
-```
-
-### 4. Train using the included sample data
-
-```bash
-python src/train_model.py
-```
-
-This creates:
-
-```text
-models/best_credit_risk_model.joblib
-reports/model_metrics.csv
-reports/risk_segment_summary.csv
-```
-
-### 5. Create prediction output
-
-```bash
-python src/predict.py
-```
-
-This creates:
-
-```text
-reports/predictions.csv
-```
-
-### 6. Regenerate README figures
-
-```bash
-python src/make_report_figures.py
-```
-
-### 7. Run tests and audit
-
-```bash
-pytest -q
-python audit_repo.py
-```
-
----
-
-## Download the Full Dataset
-
-### Option A: UCI downloader
-
-```bash
 python src/download_data.py --source uci
-python src/train_model.py --data-path data/raw/UCI_Credit_Card.csv
-python src/make_report_figures.py --data-path data/raw/UCI_Credit_Card.csv
+python src/train_model.py --data-path data/raw/UCI_Credit_Card.csv --reports-dir reports/uci --output-dir models/uci
+python src/build_evidence_report.py
+pytest -q
 ```
 
-### Option B: Kaggle downloader
+## Project structure
 
-1. Create a Kaggle account.
-2. Go to Kaggle account settings and create an API token.
-3. Place `kaggle.json` in the required Kaggle API location.
-4. Run:
-
-```bash
-python src/download_data.py --source kaggle
-python src/train_model.py --data-path data/raw/UCI_Credit_Card.csv
-python src/make_report_figures.py --data-path data/raw/UCI_Credit_Card.csv
+```text
+src/load_data.py                 loading, standardization, and validation
+src/preprocess.py                training-only preprocessing
+src/train_model.py               grouped split, selection, and evaluation
+src/predict.py                   score export and score bands
+src/build_evidence_report.py     static PNG and embedded HTML evidence report
+tests/                           validation, split, prediction, and training tests
+reports/uci/model_metrics.csv    compact verified metrics
+reports/uci/model_metrics_full.json  source, split, and evaluation manifest
+reports/uci/risk_segment_summary.csv  score-band evidence
+reports/uci/analysis.html        self-contained report with embedded charts
 ```
 
----
+Twelve local tests cover malformed targets, nonfinite features, deterministic group isolation, training execution, unlabelled CSV/XLSX prediction, standardized Excel headers, and the core pipeline behavior.
 
-## Methods Used
+## Limitations
 
-- Data cleaning and validation
-- Column standardization for UCI/Kaggle formats
-- One-hot encoding for categorical fields
-- Standard scaling for numeric fields
-- Logistic Regression with class balancing
-- Random Forest with class-balanced sampling
-- ROC-AUC, PR-AUC, F1, Precision, Recall, Confusion Matrix
-- Probability-based risk segmentation
-- Business-style CSV reporting and graph generation
-
----
-
-## Skills Demonstrated
-
-- Credit risk analytics
-- Credit card default prediction
-- Customer risk profiling
-- Fraud/default risk awareness
-- Python data analysis
-- Machine learning classification
-- Model evaluation
-- MIS-style reporting
-- Business communication through visual reports
-
----
-
-## Limitations and Next Improvements
-
-- The included sample dataset is synthetic and used only for quick demonstration.
-- Full model evaluation should be done on the complete UCI/Kaggle dataset.
-- Future improvements can include cross-validation, hyperparameter tuning, threshold optimization, feature importance reporting, SHAP analysis, and a Streamlit dashboard.
-
----
-
-## Disclaimer
-
-This project is for learning and portfolio demonstration only. It is not financial advice and should not be used for real credit decisions without proper validation, governance, compliance review, and fairness testing.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+The data is observational and historical, not a current lending population. Score bands are not calibrated probabilities. The study does not establish fairness, causal effects, deployment readiness, or financial savings. Default labels, collection practices, missingness, temporal drift, and operating costs require separate review before any operational use.

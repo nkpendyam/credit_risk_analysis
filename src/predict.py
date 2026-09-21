@@ -10,16 +10,19 @@ import pandas as pd
 
 try:
     from config import MODELS_DIR, REPORTS_DIR, SAMPLE_DATA_DIR, TARGET_COLUMN
-    from load_data import load_credit_card_data
+    from load_data import clean_credit_card_data, read_credit_card_file, standardize_columns
 except ImportError:  # pragma: no cover
     from src.config import MODELS_DIR, REPORTS_DIR, SAMPLE_DATA_DIR, TARGET_COLUMN
-    from src.load_data import load_credit_card_data
+    from src.load_data import clean_credit_card_data, read_credit_card_file, standardize_columns
 
 
 def predict(model_path: str | Path, input_path: str | Path, output_path: str | Path) -> Path:
     """Load a trained model and write customer-level risk predictions."""
     model = joblib.load(model_path)
-    df = load_credit_card_data(input_path)
+    raw = standardize_columns(read_credit_card_file(input_path))
+    if TARGET_COLUMN not in raw.columns:
+        raw[TARGET_COLUMN] = 0  # Validation placeholder; excluded from model features and output.
+    df = clean_credit_card_data(raw)
     X = df.drop(columns=[TARGET_COLUMN])
 
     probabilities = model.predict_proba(X)[:, 1]
@@ -27,11 +30,11 @@ def predict(model_path: str | Path, input_path: str | Path, output_path: str | P
 
     result = X.copy()
     result["predicted_default"] = predictions
-    result["predicted_default_probability"] = probabilities
+    result["model_score"] = probabilities
     result["risk_band"] = pd.cut(
-        result["predicted_default_probability"],
+        result["model_score"],
         bins=[-0.01, 0.25, 0.50, 0.75, 1.01],
-        labels=["Low", "Medium", "High", "Very High"],
+        labels=["Score 0.00-0.25", "Score 0.25-0.50", "Score 0.50-0.75", "Score 0.75-1.00"],
     )
 
     output = Path(output_path)

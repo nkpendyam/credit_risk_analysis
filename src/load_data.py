@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 
+import numpy as np
 import pandas as pd
 
 try:
@@ -64,7 +65,8 @@ def read_credit_card_file(path: str | Path) -> pd.DataFrame:
         return pd.read_csv(file_path)
     if suffix in {".xls", ".xlsx"}:
         first_try = pd.read_excel(file_path)
-        if {"ID", "X1"}.intersection(set(first_try.columns.astype(str))):
+        standardized_columns = set(standardize_columns(first_try).columns)
+        if set(FEATURE_COLUMNS).issubset(standardized_columns):
             return first_try
         return pd.read_excel(file_path, header=1)
     raise ValueError(f"Unsupported file type: {suffix}. Use CSV, XLS, or XLSX.")
@@ -98,7 +100,9 @@ def clean_credit_card_data(df: pd.DataFrame) -> pd.DataFrame:
     - Convert all required fields to numeric values.
     - Map unknown EDUCATION categories 0/5/6 to 4 = others/unknown.
     - Map unknown MARRIAGE category 0 to 3 = others.
-    - Drop rows with non-parsable required fields.
+    - Reject non-parsable or non-finite required values so row counts stay
+      auditable rather than changing silently.
+    - Validate the binary target before converting it to integer values.
     """
     cleaned = standardize_columns(df)
     if "ID" in cleaned.columns:
@@ -108,13 +112,28 @@ def clean_credit_card_data(df: pd.DataFrame) -> pd.DataFrame:
     validate_columns(cleaned, required_columns)
 
     cleaned = cleaned[required_columns].copy()
-    for column in required_columns:
-        cleaned[column] = pd.to_numeric(cleaned[column], errors="coerce")
-    cleaned = cleaned.dropna(subset=required_columns)
+    numeric = cleaned.apply(pd.to_numeric, errors="coerce")
+    invalid_features = [
+        column
+        for column in FEATURE_COLUMNS
+        if numeric[column].isna().any() or not np.isfinite(numeric[column]).all()
+    ]
+    if invalid_features:
+        raise ValueError(
+            "Required features contain missing, non-numeric, or non-finite values: "
+            + ", ".join(invalid_features)
+        )
+
+    target = numeric[TARGET_COLUMN]
+    if target.isna().any() or not np.isfinite(target).all() or not target.isin([0, 1]).all():
+        raise ValueError(
+            f"{TARGET_COLUMN} must contain only finite binary values 0 and 1 before integer conversion."
+        )
+    cleaned = numeric
 
     cleaned["EDUCATION"] = cleaned["EDUCATION"].replace({0: 4, 5: 4, 6: 4})
     cleaned["MARRIAGE"] = cleaned["MARRIAGE"].replace({0: 3})
-    cleaned[TARGET_COLUMN] = cleaned[TARGET_COLUMN].astype(int)
+    cleaned[TARGET_COLUMN] = target.astype(int)
 
     return cleaned
 

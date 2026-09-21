@@ -6,7 +6,7 @@ __pycache__/
 venv/
 env/
 
-# Local system files
+# Private machine state
 .DS_Store
 Thumbs.db
 
@@ -27,3 +27,8 @@ models/
 reports/predictions.csv
 reports/risk_scored_customers.csv
 reports/model_metrics_full.json
+reports/*predictions*.csv
+reports/*scored*.csv
+reports/**/risk_scored_customers.csv
+reports/**/predictions.csv
+.hypothesis/
