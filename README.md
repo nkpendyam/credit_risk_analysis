@@ -2,7 +2,7 @@
 
 This independent student project evaluates next-month default-risk ranking on the original UCI Default of Credit Card Clients dataset. It is a reproducible model-validation study, not a lending tool. The project asks how a portfolio team can describe observed risk, compare candidate models, and inspect score bands while keeping test evaluation and operational claims separate. The authoritative outputs are under `reports/uci/`; older files in the repository-level `reports/` directory are retained as a historical synthetic demonstration and are not evidence for this UCI study.
 
-Repository: [nkpendyam/credit-card-default-risk-analysis](https://github.com/nkpendyam/credit_risk_analysis)
+Repository: [nkpendyam/credit_risk_analysis](https://github.com/nkpendyam/credit_risk_analysis)
 
 ## Dataset and scope
 
